@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
+
 type ButtonProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   onClick?: () => void;
   type?: "button" | "submit";
   disabled?: boolean;

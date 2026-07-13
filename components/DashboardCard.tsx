@@ -8,14 +8,16 @@ export default function DashboardCard({
   value,
 }: Props) {
   return (
-    <div className="rounded-xl bg-slate-800 border border-slate-700 p-6 hover:border-indigo-500 transition">
-      <p className="text-slate-400 text-sm">
+    <div className="rounded-xl border border-slate-700 bg-slate-800 p-6 transition hover:border-indigo-500">
+
+      <p className="text-sm font-medium text-slate-400">
         {title}
       </p>
 
-      <h2 className="text-3xl font-bold text-white mt-3">
+      <h2 className="mt-4 text-4xl font-bold text-white">
         {value}
       </h2>
+
     </div>
   );
 }

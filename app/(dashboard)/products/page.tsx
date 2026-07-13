@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
+import ProductToolbar from "@/components/products/ProductToolbar";
+import ProductTable from "@/components/products/ProductTable";
+import EmptyProducts from "@/components/products/EmptyProducts";
+
 type Product = {
   id: string;
   name: string;
@@ -12,17 +16,26 @@ type Product = {
   price: number;
   brand: string;
   category: string;
+  currency: string;
   status: string;
 };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All");
+  const [status, setStatus] = useState("All");
+  const [sort, setSort] = useState("Newest");
 
   useEffect(() => {
     loadProducts();
   }, []);
 
   async function loadProducts() {
+    setLoading(true);
+
     const { data, error } = await supabase
       .from("products")
       .select("*")
@@ -30,10 +43,11 @@ export default function ProductsPage() {
 
     if (error) {
       console.error(error);
-      return;
+    } else {
+      setProducts(data || []);
     }
 
-    setProducts(data || []);
+    setLoading(false);
   }
 
   async function deleteProduct(id: string) {
@@ -52,10 +66,45 @@ export default function ProductsPage() {
     loadProducts();
   }
 
+  const filteredProducts = products
+    .filter((product) => {
+      const matchesSearch =
+        product.name?.toLowerCase().includes(search.toLowerCase()) ||
+        product.brand?.toLowerCase().includes(search.toLowerCase());
+
+      const matchesCategory =
+        category === "All" || product.category === category;
+
+      const matchesStatus =
+        status === "All" || product.status === status;
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sort) {
+        case "Oldest":
+          return a.name.localeCompare(b.name);
+
+        case "Price ↑":
+          return a.price - b.price;
+
+        case "Price ↓":
+          return b.price - a.price;
+
+        case "A-Z":
+          return a.name.localeCompare(b.name);
+
+        case "Z-A":
+          return b.name.localeCompare(a.name);
+
+        default:
+          return 0;
+      }
+    });
+
   return (
     <div className="space-y-8">
 
-      {/* Header */}
       <div className="flex items-center justify-between">
 
         <div>
@@ -70,101 +119,35 @@ export default function ProductsPage() {
 
         <Link
           href="/products/add"
-          className="rounded-lg bg-indigo-600 px-5 py-3 text-white hover:bg-indigo-700 transition"
+          className="rounded-lg bg-indigo-600 px-5 py-3 text-white hover:bg-indigo-700"
         >
           + Add Product
         </Link>
-      </div>
-
-      {/* Search Placeholder */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-
-        <input
-          placeholder="🔍 Search products... (Coming Soon)"
-          className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none"
-          disabled
-        />
 
       </div>
 
-      {/* Products */}
+      <ProductToolbar
+        search={search}
+        setSearch={setSearch}
+        category={category}
+        setCategory={setCategory}
+        status={status}
+        setStatus={setStatus}
+        sort={sort}
+        setSort={setSort}
+      />
 
-      {products.length === 0 ? (
-
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center">
-
-          <h2 className="text-xl font-semibold text-white">
-            No Products Found
-          </h2>
-
-          <p className="mt-2 text-slate-400">
-            Click "Add Product" to create your first product.
-          </p>
-
+      {loading ? (
+        <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
+          Loading products...
         </div>
-
+      ) : filteredProducts.length === 0 ? (
+        <EmptyProducts />
       ) : (
-
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-
-          {products.map((product) => (
-
-            <div
-              key={product.id}
-              className="rounded-xl border border-slate-800 bg-slate-900 overflow-hidden"
-            >
-
-              <img
-                src={product.image_url}
-                alt={product.name}
-                className="h-64 w-full object-cover"
-              />
-
-              <div className="space-y-3 p-5">
-
-                <h2 className="text-xl font-semibold text-white">
-                  {product.name}
-                </h2>
-
-                <p className="text-slate-400">
-                  <strong>Brand:</strong> {product.brand}
-                </p>
-
-                <p className="text-slate-400">
-                  <strong>Category:</strong> {product.category}
-                </p>
-
-                <p className="text-slate-400">
-                  <strong>Price:</strong> ₹{product.price}
-                </p>
-
-                <div className="flex gap-3 pt-3">
-
-                  <a
-                    href={product.affiliate_link}
-                    target="_blank"
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                  >
-                    Buy Now
-                  </a>
-
-                  <button
-                    onClick={() => deleteProduct(product.id)}
-                    className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          ))}
-
-        </div>
-
+        <ProductTable
+          products={filteredProducts}
+          onDelete={deleteProduct}
+        />
       )}
 
     </div>
