@@ -1,9 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { supabase } from "@/lib/supabase";
 
 import DashboardCard from "@/components/DashboardCard";
+
+import RevenueChart from "@/components/analytics/RevenueChart";
+import TopCampaigns from "@/components/analytics/TopCampaigns";
+import TopProducts from "@/components/analytics/TopProducts";
+import RecentActivity from "@/components/analytics/RecentActivity";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +19,14 @@ export default function DashboardPage() {
   const [clicks, setClicks] = useState(0);
   const [sales, setSales] = useState(0);
   const [earnings, setEarnings] = useState(0);
+
+  const [revenueData, setRevenueData] = useState<
+    { name: string; revenue: number }[]
+  >([]);
+
+  const [topCampaigns, setTopCampaigns] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboard();
@@ -24,6 +38,9 @@ export default function DashboardPage() {
     const [
       productsResult,
       campaignsResult,
+      campaignStats,
+      productsList,
+      campaignsList,
     ] = await Promise.all([
       supabase
         .from("products")
@@ -32,37 +49,92 @@ export default function DashboardPage() {
       supabase
         .from("campaigns")
         .select("*", { count: "exact", head: true }),
+
+      supabase
+        .from("campaigns")
+        .select("id,name,status,clicks,sales,earnings"),
+
+      supabase
+        .from("products")
+        .select("id,name,brand,price,status,created_at")
+        .order("created_at", { ascending: false })
+        .limit(5),
+
+      supabase
+        .from("campaigns")
+        .select("id,name,status,sales,earnings,created_at")
+        .order("earnings", { ascending: false })
+        .limit(5),
     ]);
 
     setProducts(productsResult.count ?? 0);
     setCampaigns(campaignsResult.count ?? 0);
 
-    const { data: campaignData } = await supabase
-      .from("campaigns")
-      .select("clicks,sales,earnings");
-
-    if (campaignData) {
+    if (campaignStats.data) {
       setClicks(
-        campaignData.reduce(
-          (sum, item) => sum + (item.clicks ?? 0),
+        campaignStats.data.reduce(
+          (sum, c) => sum + (c.clicks ?? 0),
           0
         )
       );
 
       setSales(
-        campaignData.reduce(
-          (sum, item) => sum + (item.sales ?? 0),
+        campaignStats.data.reduce(
+          (sum, c) => sum + (c.sales ?? 0),
           0
         )
       );
 
       setEarnings(
-        campaignData.reduce(
-          (sum, item) => sum + Number(item.earnings ?? 0),
+        campaignStats.data.reduce(
+          (sum, c) => sum + Number(c.earnings ?? 0),
           0
         )
       );
+
+      setRevenueData(
+        campaignStats.data.map((c) => ({
+          name: c.name,
+          revenue: Number(c.earnings ?? 0),
+        }))
+      );
     }
+
+    setTopCampaigns(
+      (campaignsList.data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        revenue: Number(item.earnings ?? 0),
+        sales: item.sales ?? 0,
+        status: item.status,
+      }))
+    );
+
+    setTopProducts(
+      (productsList.data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        price: Number(item.price ?? 0),
+        status: item.status,
+      }))
+    );
+
+    const recent = [
+      ...(productsList.data ?? []).map((p) => ({
+        id: p.id,
+        title: `Product: ${p.name}`,
+        subtitle: "Recently added",
+      })),
+
+      ...(campaignsList.data ?? []).map((c) => ({
+        id: c.id,
+        title: `Campaign: ${c.name}`,
+        subtitle: "Recently updated",
+      })),
+    ];
+
+    setActivities(recent.slice(0, 6));
 
     setLoading(false);
   }
@@ -83,45 +155,51 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
 
         <DashboardCard
-          title="Products"
-          value={loading ? "..." : products}
-        />
+  title="Products"
+  value={loading ? "..." : products}
+  icon="📦"
+  change="+12% this month"
+/>
 
-        <DashboardCard
-          title="Campaigns"
-          value={loading ? "..." : campaigns}
-        />
+<DashboardCard
+  title="Campaigns"
+  value={loading ? "..." : campaigns}
+  icon="🚀"
+  change="+8% this month"
+/>
 
-        <DashboardCard
-          title="Clicks"
-          value={loading ? "..." : clicks}
-        />
+<DashboardCard
+  title="Clicks"
+  value={loading ? "..." : clicks}
+  icon="👆"
+  change="+18% this week"
+/>
 
-        <DashboardCard
-          title="Sales"
-          value={loading ? "..." : sales}
-        />
+<DashboardCard
+  title="Sales"
+  value={loading ? "..." : sales}
+  icon="🛒"
+  change="+5% today"
+/>
 
-        <DashboardCard
-          title="Revenue"
-          value={
-            loading
-              ? "..."
-              : `₹${earnings.toLocaleString()}`
-          }
-        />
+<DashboardCard
+  title="Revenue"
+  value={loading ? "..." : `₹${earnings.toLocaleString()}`}
+  icon="💰"
+  change="+21% this month"
+/>
 
       </div>
 
-      <div className="mt-10 rounded-xl border border-slate-800 bg-slate-900 p-6">
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
 
-        <h2 className="text-xl font-semibold text-white">
-          Recent Activity
-        </h2>
+        <RevenueChart data={revenueData} />
 
-        <p className="mt-4 text-slate-400">
-          Analytics module coming in the next step.
-        </p>
+        <TopCampaigns campaigns={topCampaigns} />
+
+        <TopProducts products={topProducts} />
+
+        <RecentActivity activities={activities} />
 
       </div>
 
