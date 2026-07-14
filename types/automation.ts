@@ -1,4 +1,4 @@
-export interface Automation { 
+export interface Automation {
   id: string;
 
   created_at: string;
@@ -17,23 +17,7 @@ export interface Automation {
 
   message_template: string;
 
-  status: string;
+  status: "active" | "inactive";
 
   is_enabled: boolean;
-};
-
-export interface AutomationFormData {
-  name: string;
-
-  description: string;
-
-  trigger_type: string;
-
-  trigger_value: string;
-
-  message_template: string;
-
-  status: string;
-
-  is_enabled: boolean;
-};
+}

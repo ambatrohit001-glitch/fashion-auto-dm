@@ -1,16 +1,16 @@
+"use client";
+
+import { useParams } from "next/navigation";
+
 import AutomationForm from "@/components/automation/AutomationForm";
 
-export default async function EditAutomationPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default function EditAutomationPage() {
+  const params = useParams();
 
   return (
     <AutomationForm
       mode="edit"
-      automationId={id}
+      automationId={params.id as string}
     />
   );
 }

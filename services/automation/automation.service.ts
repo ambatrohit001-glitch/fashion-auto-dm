@@ -1,9 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import {
-  Automation,
-  AutomationFormData,
-} from "@/types/automation";
-
+import { Automation } from "@/types/automation";
+import { AutomationFormValues } from "@/lib/validation/automation.schema";
 /**
  * Get all automations
  */
@@ -41,7 +38,7 @@ export async function getAutomationById(
  * Create automation
  */
 export async function createAutomation(
-  automation: AutomationFormData
+automation: AutomationFormValues
 ) {
   const {
     data: { user },
@@ -68,7 +65,7 @@ export async function createAutomation(
  */
 export async function updateAutomation(
   id: string,
-  automation: AutomationFormData
+  automation: AutomationFormValues
 ) {
   const { error } = await supabase
     .from("automations")
