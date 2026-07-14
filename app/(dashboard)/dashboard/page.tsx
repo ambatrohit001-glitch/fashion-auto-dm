@@ -10,7 +10,8 @@ import RevenueChart from "@/components/analytics/RevenueChart";
 import TopCampaigns from "@/components/analytics/TopCampaigns";
 import TopProducts from "@/components/analytics/TopProducts";
 import RecentActivity from "@/components/analytics/RecentActivity";
-
+import AIInsights from "@/components/analytics/AIInsights";
+import AutomationStatus from "@/components/analytics/AutomationStatus";
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +28,10 @@ export default function DashboardPage() {
   const [topCampaigns, setTopCampaigns] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
-
+const topProductName =
+  topProducts.length > 0
+    ? topProducts[0].name
+    : "";
   useEffect(() => {
     loadDashboard();
   }, []);
@@ -195,11 +199,29 @@ export default function DashboardPage() {
 
         <RevenueChart data={revenueData} />
 
-        <TopCampaigns campaigns={topCampaigns} />
+<AIInsights
+  revenue={earnings}
+  campaigns={campaigns}
+  products={products}
+  topProduct={topProductName}
+/>
 
-        <TopProducts products={topProducts} />
+<TopCampaigns campaigns={topCampaigns} />
 
-        <RecentActivity activities={activities} />
+<AutomationStatus
+  enabled={true}
+  commentsToday={0}
+  messagesSent={0}
+  errors={0}
+/>
+
+<TopProducts products={topProducts} />
+
+<RecentActivity activities={activities} />
+
+        
+
+    
 
       </div>
 
