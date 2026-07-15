@@ -38,26 +38,38 @@ export async function getAutomationById(
  * Create automation
  */
 export async function createAutomation(
-automation: AutomationFormValues
+  automation: AutomationFormValues
 ) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await supabase.auth.getSession();
+  console.log("SESSION:", session);
+
+  const userResponse = await supabase.auth.getUser();
+  console.log("USER RESPONSE:", userResponse);
+
+  const user = userResponse.data.user;
 
   if (!user) {
     throw new Error("User not logged in.");
   }
 
-  const { error } = await supabase
+  console.log("Saving automation:", automation);
+
+  const { data, error } = await supabase
     .from("automations")
     .insert([
       {
         user_id: user.id,
         ...automation,
       },
-    ]);
+    ])
+    .select();
+
+  console.log("INSERT DATA:", data);
+  console.log("INSERT ERROR:", error);
 
   if (error) throw error;
+
+  return data;
 }
 
 /**

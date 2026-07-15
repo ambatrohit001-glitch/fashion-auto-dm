@@ -13,29 +13,38 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email || !password) {
-      alert("Please fill all fields");
-      return;
-    }
+  if (!email || !password) {
+    alert("Please fill all fields");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } =
+    await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
+  console.log("Login Data:", data);
+  console.log("Login Error:", error);
+
+  if (error) {
     setLoading(false);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    alert("Login Successful!");
-
-    router.push("/dashboard");
+    alert(error.message);
+    return;
   }
+
+  const session = await supabase.auth.getSession();
+
+  console.log("Current Session:", session);
+
+  setLoading(false);
+
+  alert("Login Successful!");
+
+  router.push("/dashboard");
+}
 
   return (
     <div
